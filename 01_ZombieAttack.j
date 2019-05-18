@@ -1,5 +1,4 @@
 library ZombieAttack requires Common
-
 globals
     location currentTarget
 endglobals

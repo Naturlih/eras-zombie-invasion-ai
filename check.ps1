@@ -2,7 +2,7 @@
 $AllItems = ""
 Get-ChildItem ".\" -Filter *.j | 
 Foreach-Object {
-    (gc $_.FullName) -replace '(library Init requires ZombieAttack, ZombieCreate, ZombieUpgrades)|(library Common)|(library ZombieAttack requires Common)|(library ZombieCreate requires Common)|(library ZombieUpgrades requires Common)|(endlibrary)', '' |
+    (gc $_.FullName) -replace '(library.*)|(endlibrary)', '' |
     Out-File -Encoding ascii ($_.FullName + '_cleaned')
     $AllItems = $AllItems + " " + $_.Name + '_cleaned'
 }

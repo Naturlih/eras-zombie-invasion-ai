@@ -1,6 +1,7 @@
 # Eras Zombie Invasion AI
 
 AI for zombies for Eras Zombie Invasion Warcraft3 custom map.
+Discord: discord.gg/Jt35FW7
 
 ## Installation
 

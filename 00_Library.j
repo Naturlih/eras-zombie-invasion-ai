@@ -1,4 +1,7 @@
 library Common
+
+// call DisplayTextToForce( GetPlayersAll(), "Hello world!" )
+
 globals
     integer zombieAiZombieLvl1 = 'h006'
     integer zombieAiZombieLvl2 = 'h02I'
@@ -11,9 +14,9 @@ globals
     // stats upgrade building
     integer zombieAiNecrocrypt = 'u000'
     // zombie type upgrade building
-    integer zombieAiNecrovolver= 'u005'
+    integer zombieAiNecrovolver = 'u005'
     
-    real zombieAiDecisionInterval = 0.05
+    real zombieAiDecisionInterval = 2
 endglobals
 
 // Simple filters
@@ -26,7 +29,7 @@ function PF_PlayerIsComputer takes nothing returns boolean
     return ( GetPlayerController(GetFilterPlayer()) == MAP_CONTROL_COMPUTER )
 endfunction
 function PF_PlayerIsUndeadComputer takes nothing returns boolean
-    return PF_PlayerIsComputer() and PF_PlayerIsUndead()
+    return PF_PlayerIsUndead() and PF_PlayerIsComputer()
 endfunction
 
 // UF stands for UnitFilter and works on GetFilterUnit()
@@ -64,6 +67,23 @@ function DecrementInHashtable takes hashtable h, integer PK, integer SK returns 
     call SaveInteger(h, PK, SK, currentVal - 1)
 endfunction
 // hashtable utils
+
+// string utils
+function B2S takes boolean b returns string
+    if b then
+        return "true"
+    else
+        return "false"
+    endif
+endfunction
+function H2NullCheckS takes handle h returns string
+    if h == null then
+        return "null"
+    else
+        return "not null"
+    endif
+endfunction
+// string utils
 
 
 function Unit_GetPlayerNumber takes nothing returns integer
