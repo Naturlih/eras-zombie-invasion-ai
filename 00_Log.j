@@ -4,6 +4,8 @@ globals
     integer Log_Stats = 0
     integer Log_Build = 1
     integer Log_BalanceEcoStrat = 2
+    integer Log_StrategyPicker = 3
+    integer Log_TierEcoStrat = 4
     
     boolean array LoggingEnabledModule
     boolean array LoggingEnabledPlayer

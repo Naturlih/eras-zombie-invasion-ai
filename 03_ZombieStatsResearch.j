@@ -91,7 +91,7 @@ function QueueResearchForPlayerIfNeeded takes player p returns nothing
             call Log(p, Log_Stats, "necrocrypt exists")
             set ResearchStarted = IssueImmediateOrderById(possibleActiveNecrocrypt, nextResearchKey)
             if ResearchStarted then
-                call Log(p, Log_Stats, "research started")
+                call Log(p, Log_Stats, "stats research started")
                 set BuildingWithActiveResearch[PIdx(p)] = possibleActiveNecrocrypt
             endif
         endif

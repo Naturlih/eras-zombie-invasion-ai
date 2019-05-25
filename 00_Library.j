@@ -26,6 +26,7 @@ globals
     integer tmp_counter
     unit tmp_getUnitResult
     integer tmp_unitIdFilter
+    player tmp_playerFilter
     
     integer secondsSinceStart = 0
 endglobals
@@ -189,10 +190,44 @@ function GetZombieAiPlayers takes force f returns nothing
 endfunction
 
 
+function CurrentZombieTier takes nothing returns integer
+    return udg_ZombieLevel
+endfunction
+
+
+function GetIncomeForPlayer takes player p returns integer
+    return udg_PlayerGoldIncome[PIdx(p)]
+endfunction
+
+
+function T1BrainExtractorFilter takes nothing returns boolean
+    return UF_UnitType(zombieAiBrainExtractorT1) and UF_PlayerOwner(tmp_playerFilter)
+endfunction
+function GetT1BrainExtractor takes player p returns unit
+    set tmp_playerFilter = p
+    return GetRandomUnitOfGroup(function T1BrainExtractorFilter)
+endfunction
+
+function T2BrainExtractorFilter takes nothing returns boolean
+    return UF_UnitType(zombieAiBrainExtractorT2) and UF_PlayerOwner(tmp_playerFilter)
+endfunction
+function GetT2BrainExtractor takes player p returns unit
+    set tmp_playerFilter = p
+    return GetRandomUnitOfGroup(function T2BrainExtractorFilter)
+endfunction
+
+function NecrovolverFilter takes nothing returns boolean
+    return UF_UnitType(zombieAiNecrovolver) and UF_PlayerOwner(tmp_playerFilter)
+endfunction
+function GetNecrovolver takes player p returns unit
+    set tmp_playerFilter = p
+    return GetRandomUnitOfGroup(function NecrovolverFilter)
+endfunction
+
+
 function Library_IncrementTime takes nothing returns nothing
     set secondsSinceStart = secondsSinceStart + 1
 endfunction
-
 function GetSecondsSinceStart takes nothing returns integer
     return secondsSinceStart
 endfunction

@@ -1,6 +1,7 @@
 library ZombieAttack requires Common, Logging
 globals
     location currentTarget
+    player dumbattack_filterPlayer
 endglobals
 
 function FilterHumanBuilding takes nothing returns boolean
@@ -8,19 +9,20 @@ function FilterHumanBuilding takes nothing returns boolean
 endfunction
 
 function FilterCombatZombiesWithoutOrders takes nothing returns boolean
-    return UF_NoOrders() and not UF_Structure() and UF_ComputerIsTheOwner() and UF_PlayerIsUndead() and not UF_UnitType(zombieAiZombuilder)
+    return UF_NoOrders() and not UF_Structure() and UF_PlayerOwner(dumbattack_filterPlayer) and not UF_UnitType(zombieAiZombuilder)
 endfunction
 
 function TriggerAttackAtCurrentPoint takes nothing returns nothing
     call IssuePointOrderLoc( GetEnumUnit(), "attack", currentTarget )
 endfunction
 
-function AttackOrderForIdleZombzAction takes nothing returns nothing
+function AttackOrderForIdleZombzAction takes player p returns nothing
     local location targetBuildingToAttack = null
     local boolexpr filter = null
     local group humanBuildings = CreateGroup()
     local group currentAttackGroup = CreateGroup()
     
+    set dumbattack_filterPlayer = p
     set filter = Condition(function FilterHumanBuilding)
     call GroupEnumUnitsInRect(humanBuildings, GetPlayableMapRect(), filter)
     call DestroyBoolExpr(filter)
@@ -42,8 +44,8 @@ function AttackOrderForIdleZombzAction takes nothing returns nothing
 endfunction
 
 //===========================================================================
-function ExecuteStep_ZombieAttack takes nothing returns nothing
-    call AttackOrderForIdleZombzAction()
+function ExecuteStep_DumbZombieAttack takes player p returns nothing
+    call AttackOrderForIdleZombzAction(p)
 endfunction
 
 endlibrary

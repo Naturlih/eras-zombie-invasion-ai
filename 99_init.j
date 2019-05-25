@@ -3,6 +3,7 @@
 globals
     trigger gg_trg_Init
     integer array udg_PlayerGoldIncome
+    integer udg_ZombieLevel
 endglobals
 function main takes nothing returns nothing
 endfunction
