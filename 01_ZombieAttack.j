@@ -1,4 +1,4 @@
-library ZombieAttack requires Common
+library ZombieAttack requires Common, Logging
 globals
     location currentTarget
 endglobals
@@ -41,18 +41,9 @@ function AttackOrderForIdleZombzAction takes nothing returns nothing
     set currentAttackGroup = null
 endfunction
 
-function InitTrig_AttackByIdleUnits takes nothing returns nothing
-    local trigger trg = CreateTrigger()
-    
-    call TriggerRegisterTimerEventPeriodic( trg, zombieAiDecisionInterval )
-    call TriggerAddAction( trg, function AttackOrderForIdleZombzAction )
-    
-    set trg = null
-endfunction
-
 //===========================================================================
-function InitTrig_AttackLogic takes nothing returns nothing
-    call InitTrig_AttackByIdleUnits()
+function ExecuteStep_ZombieAttack takes nothing returns nothing
+    call AttackOrderForIdleZombzAction()
 endfunction
 
 endlibrary

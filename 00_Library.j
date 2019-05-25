@@ -1,6 +1,7 @@
 library Common
 
 // call DisplayTextToForce( GetPlayersAll(), "Hello world!" )
+// GetObjectName(int)
 
 globals
     integer zombieAiZombieLvl1 = 'h006'
@@ -16,7 +17,17 @@ globals
     // zombie type upgrade building
     integer zombieAiNecrovolver = 'u005'
     
-    real zombieAiDecisionInterval = 2
+    integer zombieAiBrainExtractorT1 = 'u001'
+    integer zombieAiBrainExtractorT2 = 'u007'
+    integer zombieAiBrainExtractorT3 = 'u008'
+    
+    integer zombieAiReleaseControl = 'A028'
+    
+    integer tmp_counter
+    unit tmp_getUnitResult
+    integer tmp_unitIdFilter
+    
+    integer secondsSinceStart = 0
 endglobals
 
 // Simple filters
@@ -33,6 +44,9 @@ function PF_PlayerIsUndeadComputer takes nothing returns boolean
 endfunction
 
 // UF stands for UnitFilter and works on GetFilterUnit()
+function UF_GenericUnitTypeFilter takes nothing returns boolean
+    return GetUnitTypeId(GetFilterUnit()) == tmp_unitIdFilter
+endfunction
 function UF_UnitIsFleshPile takes nothing returns boolean
     return ( GetUnitTypeId(GetFilterUnit()) == zombieAiFleshPile )
 endfunction
@@ -54,8 +68,37 @@ endfunction
 function UF_UnitType takes integer typeId returns boolean
     return ( GetUnitTypeId(GetFilterUnit()) == typeId )
 endfunction
+function UF_PlayerOwner takes player p returns boolean
+    return ( GetOwningPlayer(GetFilterUnit()) == p)
+endfunction
 // Simple filters
 
+// iterators
+function IteratePlayers takes code filter, code callback returns nothing
+    local force zombiePlayers = CreateForce()
+    local boolexpr f = Condition(filter)
+    
+    call ForceEnumPlayers(zombiePlayers, f)
+    call DestroyBoolExpr(f)
+    call ForForce(zombiePlayers, callback)
+    
+    call DestroyForce(zombiePlayers)
+    set zombiePlayers = null
+    set f = null
+endfunction
+
+function IterateUnits takes code filter, code callback returns nothing
+    local group grp = CreateGroup()
+    local boolexpr f = Condition(filter)
+    call GroupEnumUnitsInRect(grp, GetPlayableMapRect(), f)
+    call DestroyBoolExpr(f)
+    call ForGroup(grp, callback)
+    
+    call DestroyGroup(grp)
+    set grp = null
+    set f = null
+endfunction
+// iterators
 
 // hashtable utils
 function IncrementInHashtable takes hashtable h, integer PK, integer SK returns nothing
@@ -85,6 +128,48 @@ function H2NullCheckS takes handle h returns string
 endfunction
 // string utils
 
+// array utils
+function PIdx takes player p returns integer
+    return GetConvertedPlayerId(p)
+endfunction
+// array utils
+
+// unit utils
+function SaveUnitFromGroup takes nothing returns nothing
+    set tmp_getUnitResult = GetEnumUnit()
+endfunction
+function GetLastUnitOfGroup takes code f returns unit
+    set tmp_getUnitResult = null
+    call IterateUnits(f, function SaveUnitFromGroup)
+    
+    return tmp_getUnitResult
+endfunction
+
+function SaveRandomUnitFromGroup takes nothing returns nothing
+    set tmp_counter = tmp_counter + 1
+    if (GetRandomInt(1, tmp_counter) == 1) then
+        set tmp_getUnitResult = GetEnumUnit()
+    endif
+endfunction
+function GetRandomUnitOfGroup takes code f returns unit
+    set tmp_getUnitResult = null
+    set tmp_counter = 0
+    call IterateUnits(f, function SaveRandomUnitFromGroup)
+    
+    return tmp_getUnitResult
+endfunction
+
+function IssueReleaseControlCommand takes unit u returns boolean
+    // TODO dunno why but this does not work
+    //return IssueImmediateOrderById(u, zombieAiReleaseControl)
+    call KillUnit(u)
+    return true
+endfunction
+
+function IsUnitDead takes unit u returns boolean
+    return IsUnitType(u, UNIT_TYPE_DEAD) or GetUnitTypeId(u) == 0
+endfunction
+// unit utils
 
 function Unit_GetPlayerNumber takes nothing returns integer
     return GetConvertedPlayerId(GetOwningPlayer(GetEnumUnit()))
@@ -101,5 +186,26 @@ function GetZombieAiPlayers takes force f returns nothing
     
     call DestroyBoolExpr(filter)
     set filter = null
+endfunction
+
+
+function Library_IncrementTime takes nothing returns nothing
+    set secondsSinceStart = secondsSinceStart + 1
+endfunction
+
+function GetSecondsSinceStart takes nothing returns integer
+    return secondsSinceStart
+endfunction
+function GetMinutesSinceStart takes nothing returns integer
+    return secondsSinceStart / 60
+endfunction
+
+function Init_TimeCounter takes nothing returns nothing
+    local trigger trg = CreateTrigger()
+    
+    call TriggerRegisterTimerEventPeriodic( trg, 1 )
+    call TriggerAddAction( trg, function Library_IncrementTime )
+    
+    set trg = null
 endfunction
 endlibrary

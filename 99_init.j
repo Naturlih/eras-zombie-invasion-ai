@@ -1,17 +1,21 @@
 // DO NOT COPY
+// it's needed for code checker to work
 globals
     trigger gg_trg_Init
+    integer array udg_PlayerGoldIncome
 endglobals
+function main takes nothing returns nothing
+endfunction
 
 // DO NOT COPY
 
 
-library Init requires ZombieResearch 
+library Init requires ZombieAi 
 
+// When changing balance don't forget to update base and inc prices for zombie tech upgrades in ZombieStatsResearch
+// Based on prices AI decides when to boost eco and when to upgrade zombz
 function Trig_Init_Actions takes nothing returns nothing
-    call InitTrig_CreateNewZombz()
-    call InitTrig_AttackLogic()
-    call InitTrig_ResearchLogic()
+    call StartZombieAi()
 endfunction
 
 //===========================================================================

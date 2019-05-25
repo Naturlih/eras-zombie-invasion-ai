@@ -1,4 +1,4 @@
-pjass 03.04.2006
+pjass 07.11.2007 (v 1.0k)
 A lightweight and fast Jass2 parser for bison/yacc
 by Rudi Cilibrasi
 Sun Jun  8 00:51:53 CEST 2003
@@ -15,6 +15,7 @@ To test this program:
 pjass common.j common.ai Blizzard.j
 
 You can find news about this program and updates at
+http://www.wc3campaigns.net/showthread.php?t=75239 and
 http://jass.sourceforge.net/
 
 Please send comments to

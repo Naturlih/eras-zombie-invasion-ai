@@ -1,54 +1,42 @@
-library ZombieResearch requires Common
+library ZombieStatsResearch requires Common, Logging
 
 //if GetConvertedPlayerId(p) == 10 then
 //    call DisplayTextToForce( GetPlayersAll(), "research started " + B2S(ResearchStarted) + " research id " + I2S(nextResearchKey) )
 //endif
 
 globals
-    hashtable upgradeLevels
     integer ResearchLevelKey_Attack = 'R001'
     integer ResearchLevelKey_AttackSpeed = 'R00S'
     integer ResearchLevelKey_Health = 'R000'
     integer ResearchLevelKey_HealthRegen = 'R00Q'
     integer ResearchLevelKey_Speed = 'R00R'
+    integer ResearchLevelKeyOffset = 'R000'
+    
+    integer array baseTechPrice
+    integer array modTechPrice
     
     // we keep active research building here, so if it got destroyed we can rollback number
     unit array BuildingWithActiveResearch
     
     // another strategy decides if player should spend money on research or on economy
-    boolean array ResearchBlockedForEconomy
+    boolean array StatsResearchBlocked
     
-    integer AlreadyHasMaxResearch = 25
+    integer MaxTechLevel = 25
     integer DoNotResearchLevel = -1
     
     player currentPlayerToFilter
-    unit tmp_researchCenter
 endglobals
-
-
-///////////////////////////////////////////
-//////////////// UTIL /////////////////////
-///////////////////////////////////////////
-
-function DoForEveryComputerZombie takes code callback returns nothing
-    local force zombiePlayers = CreateForce()
-    local boolexpr filter = Condition(function PF_PlayerIsUndeadComputer)
-    
-    call ForceEnumPlayers(zombiePlayers, filter)
-    call DestroyBoolExpr(filter)
-    call ForForce(zombiePlayers, callback)
-    
-    call DestroyForce(zombiePlayers)
-    set zombiePlayers = null
-    set filter = null
-endfunction
 
 ///////////////////////////////////////////////////////////
 //////////////// DECIDE NEXT RESEARCH /////////////////////
 ///////////////////////////////////////////////////////////
 
+function TechKey takes integer i returns integer
+    return i - ResearchLevelKeyOffset
+endfunction
+
 function LoadResearchLevel takes player p, integer key returns integer
-    return LoadInteger(upgradeLevels, GetConvertedPlayerId(p), key)
+    return GetPlayerTechCount(p, key, false) // no idea what is the difference for last boolean arg
 endfunction
 
 function GetNextResearchKey takes player p returns integer
@@ -61,7 +49,7 @@ function GetNextResearchKey takes player p returns integer
     local boolean allSameLevel = attackLvl == attackSpeedLvl and attackLvl == healthLvl and attackLvl == healthRegenLvl and attackLvl == speedLvl
     
     if allSameLevel then
-        if attackLvl == AlreadyHasMaxResearch then
+        if attackLvl == MaxTechLevel then
             return DoNotResearchLevel
         else
             return ResearchLevelKey_Attack
@@ -88,41 +76,23 @@ function FilterPlayerOwnedResearchCenter takes nothing returns boolean
     return GetOwningPlayer(GetFilterUnit()) == currentPlayerToFilter and GetUnitTypeId(GetFilterUnit()) == zombieAiNecrocrypt
 endfunction
 
-function PickLastNecrovolverFromGroup takes nothing returns nothing
-    set tmp_researchCenter = GetEnumUnit()
-endfunction
-
-function GetStatsResearchCenter takes player p returns nothing
-    local group necrocryptsGroup = CreateGroup()
-    local boolexpr filter = Condition(function FilterPlayerOwnedResearchCenter)
-    set currentPlayerToFilter = p
-    call GroupEnumUnitsInRect(necrocryptsGroup, GetPlayableMapRect(), filter)
-    call DestroyBoolExpr(filter)
-    set tmp_researchCenter = null
-    call ForGroup(necrocryptsGroup, function PickLastNecrovolverFromGroup)
-    
-    call DestroyGroup(necrocryptsGroup)
-    set necrocryptsGroup = null
-    set filter = null
-endfunction
-
-function QueueResearchForPlayerIfNeeded takes nothing returns nothing
-    local player p = GetEnumPlayer()
-    local boolean updateNotBlocked = not ResearchBlockedForEconomy[GetConvertedPlayerId(p)]
-    local unit possibleActiveNecrocrypt = BuildingWithActiveResearch[GetConvertedPlayerId(p)]
+function QueueResearchForPlayerIfNeeded takes player p returns nothing
+    local boolean updateNotBlocked = not StatsResearchBlocked[PIdx(p)]
+    local unit possibleActiveNecrocrypt = BuildingWithActiveResearch[PIdx(p)]
     local boolean noActiveResearch = possibleActiveNecrocrypt == null
     local boolean ResearchStarted = false
     local integer nextResearchKey = GetNextResearchKey(p)
     
-    if updateNotBlocked and noActiveResearch and nextResearchKey != AlreadyHasMaxResearch then
-        call GetStatsResearchCenter(p)
-        set possibleActiveNecrocrypt = tmp_researchCenter
+    call Log(p, Log_Stats, "research updateNotBlocked " + B2S(updateNotBlocked) + " noActiveResearch " + B2S(noActiveResearch) + " nextResearchKey " + GetObjectName(nextResearchKey))
+    if updateNotBlocked and noActiveResearch and nextResearchKey != DoNotResearchLevel then
+        set currentPlayerToFilter = p
+        set possibleActiveNecrocrypt = GetLastUnitOfGroup(function FilterPlayerOwnedResearchCenter)
         if possibleActiveNecrocrypt != null then
+            call Log(p, Log_Stats, "necrocrypt exists")
             set ResearchStarted = IssueImmediateOrderById(possibleActiveNecrocrypt, nextResearchKey)
             if ResearchStarted then
-                call DisplayTextToForce( GetPlayersAll(), "Issued research for player " + GetPlayerName(p) + " research id " + GetObjectName(nextResearchKey) + " necro owner " + GetPlayerName(GetOwningPlayer(possibleActiveNecrocrypt)) )
-                set BuildingWithActiveResearch[GetConvertedPlayerId(p)] = possibleActiveNecrocrypt
-                call IncrementInHashtable(upgradeLevels, GetConvertedPlayerId(p), nextResearchKey)
+                call Log(p, Log_Stats, "research started")
+                set BuildingWithActiveResearch[PIdx(p)] = possibleActiveNecrocrypt
             endif
         endif
     endif
@@ -137,16 +107,9 @@ endfunction
 
 function InitVarsForForce takes nothing returns nothing
     local player p = GetEnumPlayer()
-    call InitHashtableBJ()
-    set upgradeLevels = GetLastCreatedHashtableBJ()
     
-    call SaveInteger(upgradeLevels, GetConvertedPlayerId(p), ResearchLevelKey_Attack, 0)
-    call SaveInteger(upgradeLevels, GetConvertedPlayerId(p), ResearchLevelKey_AttackSpeed, 0)
-    call SaveInteger(upgradeLevels, GetConvertedPlayerId(p), ResearchLevelKey_Health, 0)
-    call SaveInteger(upgradeLevels, GetConvertedPlayerId(p), ResearchLevelKey_HealthRegen, 0)
-    call SaveInteger(upgradeLevels, GetConvertedPlayerId(p), ResearchLevelKey_Speed, 0)
-    set BuildingWithActiveResearch[GetConvertedPlayerId(p)] = null
-    set ResearchBlockedForEconomy[GetConvertedPlayerId(p)] = false
+    set BuildingWithActiveResearch[PIdx(p)] = null
+    set StatsResearchBlocked[PIdx(p)] = false
 
     set p = null
 endfunction
@@ -164,33 +127,37 @@ function InitZombieResearch takes nothing returns nothing
     set filter = null
 endfunction
 
-////////////////////////////////////////////////////////
-//////////////// SCHEDULE RESEARCH /////////////////////
-////////////////////////////////////////////////////////
-function QueueResearchIfNeeded takes nothing returns nothing
-    call DoForEveryComputerZombie(function QueueResearchForPlayerIfNeeded)
+function InitTechPrices takes nothing returns nothing
+    set baseTechPrice[TechKey(ResearchLevelKey_Attack)] = 250
+    set modTechPrice[TechKey(ResearchLevelKey_Attack)] = 350
+    
+    set baseTechPrice[TechKey(ResearchLevelKey_AttackSpeed)] = 175
+    set modTechPrice[TechKey(ResearchLevelKey_AttackSpeed)] = 200
+    
+    set baseTechPrice[TechKey(ResearchLevelKey_HealthRegen)] = 75
+    set modTechPrice[TechKey(ResearchLevelKey_HealthRegen)] = 100
+    
+    set baseTechPrice[TechKey(ResearchLevelKey_Health)] = 200
+    set modTechPrice[TechKey(ResearchLevelKey_Health)] = 200
+    
+    set baseTechPrice[TechKey(ResearchLevelKey_Speed)] = 125
+    set modTechPrice[TechKey(ResearchLevelKey_Speed)] = 150
 endfunction
 
-function RegisterResearchActionTrigger takes nothing returns nothing
-    local trigger trg = CreateTrigger()
-    
-    call TriggerRegisterTimerEventPeriodic( trg, zombieAiDecisionInterval )
-    call TriggerAddAction( trg, function QueueResearchIfNeeded )
-    
-    set trg = null
-endfunction
-
-
-////////////////////////////////////////////////////////
-//////////////// CLEAN ACTIVE NECROVOLVER //////////////
-////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+//////////////// CLEAN ACTIVE NECROCRYPT //////////////
+///////////////////////////////////////////////////////
 
 function CleanActiveResearchUnit takes nothing returns nothing
     local player p = GetOwningPlayer(GetTriggerUnit())
 
-    set BuildingWithActiveResearch[GetConvertedPlayerId(p)] = null
+    set BuildingWithActiveResearch[PIdx(p)] = null
 
     set p = null
+endfunction
+
+function ZombieNecrocryptFilter takes nothing returns boolean
+    return GetUnitTypeId(GetTriggerUnit()) == zombieAiNecrocrypt
 endfunction
 
 function ResearchCentersOfComputerZombie takes nothing returns boolean
@@ -208,16 +175,36 @@ function RegisterResearchFinishedTrigger takes nothing returns nothing
     call TriggerRegisterAnyUnitEventBJ( trg, EVENT_PLAYER_UNIT_RESEARCH_FINISH )
     call TriggerAddCondition( trg, Condition( function ResearchCentersOfComputerZombie ) )
     call TriggerAddAction( trg, function CleanActiveResearchUnit )
-    
+     
     set trg = null
 endfunction
 
+////////////////////////////////////////////////
+//////////////// PUBLIC FUNCTIONS //////////////
+////////////////////////////////////////////////
+
+function GetNextResearchPrice takes player p returns integer
+    local integer nextResearchKey = TechKey(GetNextResearchKey(p))
+    return baseTechPrice[nextResearchKey] + modTechPrice[nextResearchKey] * LoadResearchLevel(p, nextResearchKey)
+endfunction
+
+function BlockResearch takes player p returns nothing
+    set StatsResearchBlocked[PIdx(p)] = true
+endfunction
+
+function UnblockResearch takes player p returns nothing
+    set StatsResearchBlocked[PIdx(p)] = false
+endfunction
 
 //===========================================================================
-function InitTrig_ResearchLogic takes nothing returns nothing
+function Init_ResearchStatsLogic takes nothing returns nothing
     call InitZombieResearch()
-    call RegisterResearchActionTrigger()
+    call InitTechPrices()
     call RegisterResearchFinishedTrigger()
+endfunction
+
+function ExecuteStep_ZombieResearchStats takes player p returns nothing
+    call QueueResearchForPlayerIfNeeded(p)
 endfunction
 
 endlibrary
