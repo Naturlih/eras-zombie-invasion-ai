@@ -6,6 +6,8 @@ globals
     integer Log_BalanceEcoStrat = 2
     integer Log_StrategyPicker = 3
     integer Log_TierEcoStrat = 4
+    integer Log_UnitCreate = 5
+    integer Log_AttackDumb = 6
     
     boolean array LoggingEnabledModule
     boolean array LoggingEnabledPlayer

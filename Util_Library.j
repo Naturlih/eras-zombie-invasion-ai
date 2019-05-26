@@ -1,15 +1,29 @@
 library Common
 
-// call DisplayTextToForce( GetPlayersAll(), "Hello world!" )
 // GetObjectName(int)
 
 globals
+    //north
+    player Zombie1Player = Player(9)
+    player Zombie2Player = Player(10)
+    player Zombie3Player = Player(11)
+    //south
+    player Zombie4Player = Player(22)
+    player Zombie5Player = Player(23)
+    
     integer zombieAiZombieLvl1 = 'h006'
     integer zombieAiZombieLvl2 = 'h02I'
     integer zombieAiZombieLvl3 = 'h02P'
     integer zombieAiZombieLvl4 = 'h03L'
     integer zombieAiZombieLvl5 = 'h03W'
     integer zombieAiZombuilder = 'h008'
+    integer zombieAiGorecrow = 'h04Y'
+    integer zombieAiSneezer = 'h022'
+    integer zombieAiBloodCultist = 'h015'
+    integer zombieAiStalker = 'h00C'
+    integer zombieAiMauler = 'h00Z'
+    integer zombieAiLumpy = 'h00F'
+    integer zombieAiFleshGiant = 'h04G'
     
     integer zombieAiFleshPile = 'u006'
     // stats upgrade building
@@ -29,7 +43,27 @@ globals
     player tmp_playerFilter
     
     integer secondsSinceStart = 0
+    
+    group tmp_groupOfDeadUnits
+    group tmp_groupToRemoveUnitsFrom
 endglobals
+
+// string utils
+function B2S takes boolean b returns string
+    if b then
+        return "true"
+    else
+        return "false"
+    endif
+endfunction
+function H2NullCheckS takes handle h returns string
+    if h == null then
+        return "null"
+    else
+        return "not null"
+    endif
+endfunction
+// string utils
 
 // Simple filters
 // PF stands for PlayerFilter and works on GetFilterPlayer()
@@ -112,23 +146,6 @@ function DecrementInHashtable takes hashtable h, integer PK, integer SK returns 
 endfunction
 // hashtable utils
 
-// string utils
-function B2S takes boolean b returns string
-    if b then
-        return "true"
-    else
-        return "false"
-    endif
-endfunction
-function H2NullCheckS takes handle h returns string
-    if h == null then
-        return "null"
-    else
-        return "not null"
-    endif
-endfunction
-// string utils
-
 // array utils
 function PIdx takes player p returns integer
     return GetConvertedPlayerId(p)
@@ -170,6 +187,28 @@ endfunction
 function IsUnitDead takes unit u returns boolean
     return IsUnitType(u, UNIT_TYPE_DEAD) or GetUnitTypeId(u) == 0
 endfunction
+
+function SaveDeadUnits takes nothing returns nothing
+    local unit u = GetEnumUnit()
+    if IsUnitDead(u) then
+        call DisplayTextToForce(GetPlayersAll(), "Removing unit " + GetUnitName(u))//TODO
+        call GroupAddUnit(tmp_groupOfDeadUnits, u)
+    endif
+    set u = null
+endfunction
+function RemoveUnitsFromGroup takes nothing returns nothing
+    call GroupRemoveUnit(tmp_groupToRemoveUnitsFrom, GetEnumUnit())
+endfunction
+function CleanDeadUnitsFromGroup takes group g returns nothing
+    set tmp_groupOfDeadUnits = CreateGroup()
+
+    call ForGroup(g, function SaveDeadUnits)
+    set tmp_groupToRemoveUnitsFrom = g
+    call ForGroup(tmp_groupOfDeadUnits, function RemoveUnitsFromGroup)
+    
+    call DestroyGroup(tmp_groupOfDeadUnits)
+    set tmp_groupOfDeadUnits = null
+endfunction
 // unit utils
 
 function Unit_GetPlayerNumber takes nothing returns integer
@@ -192,6 +231,22 @@ endfunction
 
 function CurrentZombieTier takes nothing returns integer
     return udg_ZombieLevel
+endfunction
+
+function GetZombieUnitTypeByTier takes integer tier returns integer
+    if tier == 1 then
+        return zombieAiZombieLvl1
+    elseif tier == 2 then
+        return zombieAiZombieLvl2
+    elseif tier == 3 then
+        return zombieAiZombieLvl3
+    elseif tier == 4 then
+        return zombieAiZombieLvl4
+    elseif tier == 5 then
+        return zombieAiZombieLvl5
+    else
+        return -1 // TODO logging?
+    endif
 endfunction
 
 

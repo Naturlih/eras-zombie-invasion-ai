@@ -1,4 +1,4 @@
-library ZombieBuild requires Common, Logging
+library ZombieBuild requires Common, Logging, ZombieCreate
 
 globals
     location tmp_loc
@@ -19,6 +19,7 @@ struct ZombieBuildInfo
     // this is needed to detect stuck zombuilders
     // if there are active zombuilder, he has no orders and building was not started, he stuck and he needs to be killed
     unit activeZombuilder = null
+    group zombuilderGroup
 endstruct
 
 function ReleaseStuckActiveZombuilder takes ZombieBuildInfo info returns nothing
@@ -134,6 +135,9 @@ function InitIfNeeded_ZombieBuildLogicForPlayer takes player p returns nothing
         set info = ZombieBuildInfo.create()
         set buildInfo[PIdx(p)] = info
         set info.p = p
+        set info.zombuilderGroup = CreateGroup()
+        call Log(p, Log_Build, "setting requirement to 3 of " + GetObjectName(zombieAiZombuilder))
+        call SetGroupZombieRequirement(info.zombuilderGroup, zombieAiZombuilder, 3)
     endif
 endfunction
 
@@ -151,7 +155,7 @@ function Command_RequestBuilding takes player p, integer buildingId returns bool
     endif
 endfunction
 
-function Init_ZombieBuildLogic takes nothing returns nothing
+function Init_Module_Build takes nothing returns nothing
     local trigger constructionStartedTrigger = CreateTrigger()
     
     call TriggerRegisterAnyUnitEventBJ( constructionStartedTrigger, EVENT_PLAYER_UNIT_CONSTRUCT_START )
@@ -164,6 +168,7 @@ function ExecuteStep_ZombieBuildLogic takes player p returns nothing
     local boolean requestSucceeded = false
 
     call InitIfNeeded_ZombieBuildLogicForPlayer(p)
+    call ModuleStep_CreateNewZombz(p, buildInfo[PIdx(p)].zombuilderGroup)
     call StartBuildingCreationIfNotAlready(buildInfo[PIdx(p)])
 endfunction
 

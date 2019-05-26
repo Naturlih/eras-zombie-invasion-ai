@@ -1,14 +1,6 @@
-library ZombieAi requires ZombieStrategyPicker, ZombieStatsResearch, ZombieBuild, ZombieAttack, ZombieCreate, ZombieBalancedEconomyStrategy, ZombieTierUpgradesEconomyStrategy, Logging
+library ZombieAi requires ZombieStrategyPicker, ZombieStatsResearch, ZombieBuild, ZombieAttack, ZombieCreate, ZombieBalancedEconomyStrategy, ZombieTierUpgradesEconomyStrategy, ModuleUnitsObserver, Logging
 
 globals
-    //north
-    player Zombie1Player = Player(9)
-    player Zombie2Player = Player(10)
-    player Zombie3Player = Player(11)
-    //south
-    player Zombie4Player = Player(22)
-    player Zombie5Player = Player(23)
-
     // for new strategies to work ZombieStrategyPicker needs to be updated
     integer array economyStrategies
     integer array combatStrategies
@@ -35,24 +27,27 @@ endfunction
 function ZombieAi_ExecuteStepPerPlayer takes nothing returns nothing
     local player p = GetEnumPlayer()
     
+    //must be before attack
+    //otherwise at start zombuilders wont be created
+    call ExecuteStep_ZombieBuildLogic(p)
     call ExecuteStep_EconomyStrategy(p, economyStrategies[PIdx(p)])
     call ExecuteStep_AttackStrategy(p, combatStrategies[PIdx(p)])
-    call ExecuteStep_ZombieBuildLogic(p)
     call ExecuteStep_ZombieResearchStats(p)
 
     set p = null
 endfunction
 function ZombieAi_ExecuteStep takes nothing returns nothing
-    call ExecuteStep_CreateNewZombz()
     call IteratePlayers(function ZombieAiEnabledFilter, function ZombieAi_ExecuteStepPerPlayer)
 endfunction
 
 function ZombieAiInitializeModules takes nothing returns nothing
-    call Init_CreateZombiesLogic()
-    call Init_ZombieBuildLogic()
+    call Init_Module_UnitsObserver()
+    call Init_Module_UnitCreate()
+    call Init_Module_Build()
     call Init_ResearchStatsLogic()
     call Init_EconomyStrategy_Balanced()
     call Init_EconomyStrategy_TierUpgrades()
+    call Init_AttackStrategy_Dumb()
 endfunction
 
 function ZombieAiInitializeStrategies takes nothing returns nothing
@@ -90,10 +85,12 @@ function StartZombieAi takes nothing returns nothing
     call ZombieAiRegisterTrigger()
     
     //Logging
-    call EnableLog(Player(10), Log_BalanceEcoStrat)
-    call EnableLog(Player(10), Log_Stats)
-    call EnableLog(Player(10), Log_StrategyPicker)
-    call EnableLog(Player(10), Log_TierEcoStrat)
+    call EnableLog(Player(11), Log_BalanceEcoStrat)
+    //call EnableLog(Player(10), Log_Stats)
+    //call EnableLog(Player(10), Log_StrategyPicker)
+    //call EnableLog(Player(10), Log_TierEcoStrat)
+    //call EnableLog(Player(10), Log_UnitCreate)
+    //call EnableLog(Player(10), Log_AttackDumb)
 endfunction
 
 endlibrary

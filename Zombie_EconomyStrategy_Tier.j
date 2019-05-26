@@ -2,7 +2,7 @@ library ZombieTierUpgradesEconomyStrategy requires Common, ZombieStatsResearch, 
 
 globals
     integer NoTierUpgradeNeeded = -1
-    integer BigIncomeSeconds = 9 // TODO
+    integer BigIncomeSeconds = 900
     
     integer array zombieAiTierUpgrades
     integer zombieAiT2Upgrade = 'R00Z'

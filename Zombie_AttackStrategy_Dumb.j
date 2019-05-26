@@ -1,51 +1,62 @@
-library ZombieAttack requires Common, Logging
+library ZombieAttack requires Common, Logging, ZombieCreate
 globals
-    location currentTarget
-    player dumbattack_filterPlayer
+    location array mainTargetByPlayer //TODO
+    group array groupByPlayer // TODO
+    integer array lastZombieTier
 endglobals
 
-function FilterHumanBuilding takes nothing returns boolean
-    return UF_Structure() and UF_OwnerIsHuman()
+function AttackOrderForGroup takes player p returns nothing
+    if CurrentZombieTier() != lastZombieTier[PIdx(p)] then
+        call Log(p, Log_AttackDumb, "Updated tier to " + I2S(CurrentZombieTier()))
+        set lastZombieTier[PIdx(p)] = CurrentZombieTier
+        call ClearGroupZombieRequirement(groupByPlayer[PIdx(p)])
+    endif
+    call Log(p, Log_AttackDumb, "setting requirement to 50 of " + GetObjectName(GetZombieUnitTypeByTier(lastZombieTier[PIdx(p)])))
+    call SetGroupZombieRequirement(groupByPlayer[PIdx(p)], GetZombieUnitTypeByTier(lastZombieTier[PIdx(p)]), 14)
+    call ModuleStep_CreateNewZombz(p, groupByPlayer[PIdx(p)])
+    call Log(p, Log_AttackDumb, "setting attack order")
+    call GroupPointOrderLoc(groupByPlayer[PIdx(p)], "attack", mainTargetByPlayer[PIdx(p)])
 endfunction
 
-function FilterCombatZombiesWithoutOrders takes nothing returns boolean
-    return UF_NoOrders() and not UF_Structure() and UF_PlayerOwner(dumbattack_filterPlayer) and not UF_UnitType(zombieAiZombuilder)
-endfunction
-
-function TriggerAttackAtCurrentPoint takes nothing returns nothing
-    call IssuePointOrderLoc( GetEnumUnit(), "attack", currentTarget )
-endfunction
-
-function AttackOrderForIdleZombzAction takes player p returns nothing
-    local location targetBuildingToAttack = null
-    local boolexpr filter = null
-    local group humanBuildings = CreateGroup()
-    local group currentAttackGroup = CreateGroup()
+function Module_AttackStrategy_DumbInitPerPlayer takes nothing returns nothing
+    local player p = GetEnumPlayer()
     
-    set dumbattack_filterPlayer = p
-    set filter = Condition(function FilterHumanBuilding)
-    call GroupEnumUnitsInRect(humanBuildings, GetPlayableMapRect(), filter)
-    call DestroyBoolExpr(filter)
-    call ForGroup(humanBuildings, function GroupPickRandomUnitEnum)
-    set currentTarget = GetUnitLoc(bj_groupRandomCurrentPick)
+    call Log(p, Log_AttackDumb, "init dumb")
+    set groupByPlayer[PIdx(p)] = CreateGroup()
+    set lastZombieTier[PIdx(p)] = 1
     
-    set filter = Condition(function FilterCombatZombiesWithoutOrders)
-    call GroupEnumUnitsInRect(currentAttackGroup, GetPlayableMapRect(), filter)
-    call DestroyBoolExpr(filter)
-    call ForGroup(currentAttackGroup, function TriggerAttackAtCurrentPoint )
+    set p = null
+endfunction
 
-    call DestroyGroup(humanBuildings)
-    call DestroyGroup(currentAttackGroup)
-    call RemoveLocation(currentTarget)
-    set targetBuildingToAttack = null
-    set filter = null
-    set humanBuildings = null
-    set currentAttackGroup = null
+function Lvl1ZombieFilter takes nothing returns boolean
+    return UF_UnitType(zombieAiZombieLvl1)
+endfunction
+function AddZombieToPlayerGroup takes nothing returns nothing
+    local unit u = GetEnumUnit()
+    local player p = GetOwningPlayer(u)
+    
+    call GroupAddUnit(groupByPlayer[PIdx(p)], u)
+    
+    set u = null
+    set p = null
+endfunction
+function Module_AttackStrategy_AddStartingZombies takes nothing returns nothing
+    call IterateUnits(function Lvl1ZombieFilter, function AddZombieToPlayerGroup)
 endfunction
 
 //===========================================================================
+
+function Init_AttackStrategy_Dumb takes nothing returns nothing
+    set mainTargetByPlayer[PIdx(Zombie1Player)] = Location(8800, -240) //hardcode to Romania
+    set mainTargetByPlayer[PIdx(Zombie2Player)] = GetStartLocationLoc(GetPlayerStartLocation(Player(3 - 1))) //hardcode to Russia
+    set mainTargetByPlayer[PIdx(Zombie3Player)] = Location(15000, -5800) //hardcode to Turkey
+    
+    call IteratePlayers(function PF_PlayerIsUndead, function Module_AttackStrategy_DumbInitPerPlayer)
+    call Module_AttackStrategy_AddStartingZombies()
+endfunction
+
 function ExecuteStep_DumbZombieAttack takes player p returns nothing
-    call AttackOrderForIdleZombzAction(p)
+    call AttackOrderForGroup(p)
 endfunction
 
 endlibrary

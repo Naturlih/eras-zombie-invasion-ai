@@ -15,6 +15,8 @@ library Init requires ZombieAi
 
 // When changing balance don't forget to update base and inc prices for zombie tech upgrades in ZombieStatsResearch
 // Based on prices AI decides when to boost eco and when to upgrade zombz
+
+// Also all zombie unit types should be saved in Zombie_Module_UnitCreate, otherwise builder module will not create them
 function Trig_Init_Actions takes nothing returns nothing
     call StartZombieAi()
 endfunction
