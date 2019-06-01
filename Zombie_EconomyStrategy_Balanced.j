@@ -3,7 +3,7 @@ library ZombieBalancedEconomyStrategy requires Common, ZombieStatsResearch, Zomb
 function BuildMoreIncome takes player p returns nothing
     local unit brainExtractor = null
     if GetSecondsSinceStart() < 540 and GetPilesCount(p) < 8 then
-        call Log(p, Log_BalanceEcoStrat, "building pile")
+        call Log(p, Log_BalanceEcoStrat, "building pile (pile count " + I2S(GetPilesCount(p)))
         call Command_RequestBuilding(p, zombieAiFleshPile)
     else
         set brainExtractor = GetT1BrainExtractor(p)

@@ -8,6 +8,7 @@ globals
     integer Log_TierEcoStrat = 4
     integer Log_UnitCreate = 5
     integer Log_AttackDumb = 6
+    integer Log_AttackStrategyByPathes = 7
     
     boolean array LoggingEnabledModule
     boolean array LoggingEnabledPlayer
@@ -27,6 +28,12 @@ endfunction
 function Log takes player p, integer moduleId, string text returns nothing
     if LoggingEnabledModule[moduleId] and LoggingEnabledPlayer[PIdx(p)] then
         call DisplayTextToForce(GetPlayersAll(), I2S(GetMinutesSinceStart()) + ":" + ModStr(GetSecondsSinceStart(), 60) + " " + GetPlayerName(p) + " (" + I2S(moduleId) + "): " + text)
+    endif
+endfunction
+
+function LogModule takes integer moduleId, string text returns nothing
+    if LoggingEnabledModule[moduleId] then
+        call DisplayTextToForce(GetPlayersAll(), I2S(GetMinutesSinceStart()) + ":" + ModStr(GetSecondsSinceStart(), 60) + " (" + I2S(moduleId) + "): " + text)
     endif
 endfunction
 

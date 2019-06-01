@@ -3,7 +3,18 @@ globals
     location array mainTargetByPlayer //TODO
     group array groupByPlayer // TODO
     integer array lastZombieTier
+    player tmp_player_DumbAttack
 endglobals
+
+function IssueAttackOrderForUnit takes nothing returns nothing
+    local unit u = GetEnumUnit()
+
+    if GetUnitCurrentOrder(u) == String2OrderIdBJ("none") then
+        call IssuePointOrderLoc(u, "attack", mainTargetByPlayer[PIdx(tmp_player_DumbAttack)])
+    endif
+    
+    set u = null
+endfunction
 
 function AttackOrderForGroup takes player p returns nothing
     if CurrentZombieTier() != lastZombieTier[PIdx(p)] then
@@ -15,7 +26,8 @@ function AttackOrderForGroup takes player p returns nothing
     call SetGroupZombieRequirement(groupByPlayer[PIdx(p)], GetZombieUnitTypeByTier(lastZombieTier[PIdx(p)]), 14)
     call ModuleStep_CreateNewZombz(p, groupByPlayer[PIdx(p)])
     call Log(p, Log_AttackDumb, "setting attack order")
-    call GroupPointOrderLoc(groupByPlayer[PIdx(p)], "attack", mainTargetByPlayer[PIdx(p)])
+    set tmp_player_DumbAttack = p
+    call ForGroup(groupByPlayer[PIdx(p)], function IssueAttackOrderForUnit)
 endfunction
 
 function Module_AttackStrategy_DumbInitPerPlayer takes nothing returns nothing
@@ -50,6 +62,8 @@ function Init_AttackStrategy_Dumb takes nothing returns nothing
     set mainTargetByPlayer[PIdx(Zombie1Player)] = Location(8800, -240) //hardcode to Romania
     set mainTargetByPlayer[PIdx(Zombie2Player)] = GetStartLocationLoc(GetPlayerStartLocation(Player(3 - 1))) //hardcode to Russia
     set mainTargetByPlayer[PIdx(Zombie3Player)] = Location(15000, -5800) //hardcode to Turkey
+    set mainTargetByPlayer[PIdx(Zombie4Player)] = GetStartLocationLoc(GetPlayerStartLocation(Player(7 - 1))) //hardcode to Turkey
+    set mainTargetByPlayer[PIdx(Zombie5Player)] = GetStartLocationLoc(GetPlayerStartLocation(Player(19 - 1))) //hardcode to Egypt
     
     call IteratePlayers(function PF_PlayerIsUndead, function Module_AttackStrategy_DumbInitPerPlayer)
     call Module_AttackStrategy_AddStartingZombies()

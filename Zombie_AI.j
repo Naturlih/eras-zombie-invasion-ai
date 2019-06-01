@@ -7,6 +7,8 @@ globals
 
     boolean array aiEnabledForPlayer
     real zombieAiDecisionInterval = 2
+    
+    integer currentStep = 0
 endglobals
 
 function ZombieAiEnabledFilter takes nothing returns boolean
@@ -85,7 +87,7 @@ function StartZombieAi takes nothing returns nothing
     call ZombieAiRegisterTrigger()
     
     //Logging
-    call EnableLog(Player(11), Log_BalanceEcoStrat)
+    //call EnableLog(Zombie2Player, Log_BalanceEcoStrat)
     //call EnableLog(Player(10), Log_Stats)
     //call EnableLog(Player(10), Log_StrategyPicker)
     //call EnableLog(Player(10), Log_TierEcoStrat)

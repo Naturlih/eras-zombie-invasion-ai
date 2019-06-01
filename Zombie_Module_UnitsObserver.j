@@ -13,13 +13,10 @@ function ForGroupCountUnitsInGroupByTypeId takes nothing returns nothing
 endfunction
 
 function PileFilter takes nothing returns boolean
-    return UF_UnitType(zombieAiFleshPile)
-endfunction
-function ZombuilderFilter takes nothing returns boolean
-    return UF_UnitType(zombieAiZombuilder)
+    return GetUnitTypeId(GetTriggerUnit()) == zombieAiFleshPile
 endfunction
 function AddPileOnCreationByTrigger takes nothing returns nothing
-    call GroupAddUnit(pilesByPlayer[PIdx(GetOwningPlayer(GetTriggerUnit()))], GetTriggerUnit())
+    call GroupAddUnit(pilesByPlayer[PIdx(GetOwningPlayer(GetConstructingStructure()))], GetConstructingStructure())
 endfunction
 function RemovePileOnDeath takes nothing returns nothing
     call GroupRemoveUnit(pilesByPlayer[PIdx(GetOwningPlayer(GetTriggerUnit()))], GetTriggerUnit())
@@ -29,7 +26,7 @@ function InitPileCountingTriggers takes nothing returns nothing
     local trigger removePileOnDeathTrg = CreateTrigger()
     
     call TriggerRegisterAnyUnitEventBJ(AddPileOnCreationTrg, EVENT_PLAYER_UNIT_CONSTRUCT_START)
-    call TriggerAddCondition(AddPileOnCreationTrg, Condition(function ZombuilderFilter))
+    call TriggerAddCondition(AddPileOnCreationTrg, Condition(function PileFilter))
     call TriggerAddAction(AddPileOnCreationTrg, function AddPileOnCreationByTrigger)
     
     call TriggerRegisterAnyUnitEventBJ(removePileOnDeathTrg, EVENT_PLAYER_UNIT_DEATH )

@@ -191,7 +191,6 @@ endfunction
 function SaveDeadUnits takes nothing returns nothing
     local unit u = GetEnumUnit()
     if IsUnitDead(u) then
-        call DisplayTextToForce(GetPlayersAll(), "Removing unit " + GetUnitName(u))//TODO
         call GroupAddUnit(tmp_groupOfDeadUnits, u)
     endif
     set u = null
@@ -279,6 +278,9 @@ function GetNecrovolver takes player p returns unit
     return GetRandomUnitOfGroup(function NecrovolverFilter)
 endfunction
 
+function Mod takes integer x, integer y returns integer
+    return R2I(x - (x / y) * y)
+endfunction
 
 function Library_IncrementTime takes nothing returns nothing
     set secondsSinceStart = secondsSinceStart + 1
